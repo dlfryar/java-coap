@@ -20,6 +20,7 @@ import com.mbed.coap.packet.CoapPacket;
 import com.mbed.coap.transport.BlockingCoapTransport;
 import com.mbed.coap.transport.CoapReceiver;
 import com.mbed.coap.transport.CoapReceiverForTcp;
+import com.mbed.coap.transport.CoapReceiverForTcpUtil;
 import com.mbed.coap.transport.TransportContext;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -99,7 +100,7 @@ public class SingleConnectionSocketServerTransport extends BlockingCoapTransport
 
     @Override
     public void start(CoapReceiver coapReceiver) throws IOException {
-        serverThread = new Thread(() -> serverLoop(CoapReceiverForTcp.from(coapReceiver)), "sslsocket-server");
+        serverThread = new Thread(() -> serverLoop(CoapReceiverForTcpUtil.from(coapReceiver)), "sslsocket-server");
         serverThread.start();
     }
 
