@@ -30,12 +30,12 @@ public class SSLSocketClientTransportTest {
     private static KeyStore SRV_KS = SSLUtils.ksFrom("/test-server.jks", SECRET);
     private static KeyStore CLI_KS = SSLUtils.ksFrom("/test-client.jks", SECRET);
 
+    private SSLContext srvSslContext = SSLUtils.sslContext(SRV_KS, SECRET);
+    private SSLContext clientSslContext = SSLUtils.sslContext(CLI_KS, SECRET);
 
     @Test
     public void successfulConnection() throws Exception {
 
-        SSLContext srvSslContext = SSLUtils.sslContext(SRV_KS, SECRET);
-        SSLContext clientSslContext = SSLUtils.sslContext(CLI_KS, SECRET);
         CoapServer srv = CoapServer.builder()
                 .transport(new SingleConnectionSSLSocketServerTransport(srvSslContext, 0, CoapSerializer.UDP))
                 .build().start();
@@ -48,6 +48,27 @@ public class SSLSocketClientTransportTest {
 
         //        assertNotNull(client.ping().get());
         assertNotNull(client.resource("/test").get().get());
+
+
+        client.close();
+        srv.stop();
+
+    }
+
+    @Test
+    public void successfulConnection_with_shim_serializer() throws Exception {
+
+        CoapServer srv = CoapServer.builder()
+                .transport(new SingleConnectionSSLSocketServerTransport(srvSslContext, 0, new CoapShimSerializer(50_000)))
+                .build().start();
+
+
+        InetSocketAddress serverAdr = new InetSocketAddress("localhost", srv.getLocalSocketAddress().getPort());
+        CoapClient client = CoapClientBuilder.clientFor(serverAdr,
+                CoapServer.builder().maxMessageSize(50_000).transport(new SSLSocketClientTransport(serverAdr, clientSslContext.getSocketFactory(), new CoapShimSerializer(50_000))).build().start()
+        );
+
+        assertNotNull(client.resource("/test").payload(new byte[2000]).put().get());
 
 
         client.close();
